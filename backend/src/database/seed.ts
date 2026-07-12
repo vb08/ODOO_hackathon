@@ -128,6 +128,29 @@ async function main() {
     logger.info(`Emission Factor upserted: ${factor.name}`);
   }
 
+  // 5. Seed ESG Policies
+  const policiesData = [
+    { title: "Environmental Protection & Anti-Pollution Policy", code: "POL-001", content: "Guidelines and regulations to protect the local environment, reduce waste, and avoid hazardous pollution across all departments.", version: "1.0", status: "ACTIVE" },
+    { title: "Corporate Social Responsibility (CSR) Action Framework", code: "POL-002", content: "Details of organization commitments to community health programs, safety provisions, and employee CSR activity guidelines.", version: "1.0", status: "ACTIVE" },
+    { title: "Corporate Governance & Ethical Standards Code", code: "POL-003", content: "Our corporate whistleblower procedures, compliance review boards, and standards of professional conduct guidelines.", version: "1.0", status: "DRAFT" }
+  ];
+
+  for (const policy of policiesData) {
+    await prisma.eSGPolicy.upsert({
+      where: { code: policy.code },
+      update: { title: policy.title, content: policy.content, version: policy.version, status: policy.status },
+      create: {
+        title: policy.title,
+        code: policy.code,
+        content: policy.content,
+        version: policy.version,
+        status: policy.status,
+        createdByUserId: adminId
+      }
+    });
+    logger.info(`ESG Policy upserted: ${policy.code}`);
+  }
+
   logger.info("🎉 Database seeding completed successfully.");
 }
 

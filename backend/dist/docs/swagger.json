@@ -493,6 +493,392 @@
                     "200": { "description": "Goal deleted successfully" }
                 }
             }
+        },
+        "/governance/dashboard/summary": {
+            "get": {
+                "summary": "Retrieve governance dashboard summary",
+                "description": "Returns company-wide or unit-specific governance scores, policy compliance ratios, open/critical compliance issues, and upcoming audits.",
+                "tags": ["Governance Dashboard"],
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": false,
+                        "description": "Department ID to filter metrics (optional for Admins/ESG Managers; auto-applied for Department Heads)",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Governance dashboard metrics retrieved successfully"
+                    }
+                }
+            }
+        },
+        "/governance/policies": {
+            "post": {
+                "summary": "Create a new ESG Policy (Draft/Active)",
+                "description": "Requires ADMIN or ESG_MANAGER role. Transitioning to ACTIVE status auto-generates acknowledgements for all active employees.",
+                "tags": ["Governance Policies"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["title", "code", "content"],
+                                "properties": {
+                                    "title": { "type": "string", "example": "Whistleblower Protection Policy" },
+                                    "code": { "type": "string", "example": "POL-003" },
+                                    "content": { "type": "string", "example": "This policy provides safety guidelines for whistleblowers..." },
+                                    "version": { "type": "string", "example": "1.0" },
+                                    "status": { "type": "string", "enum": ["DRAFT", "ACTIVE", "ARCHIVED"], "example": "ACTIVE" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "ESG Policy created successfully" }
+                }
+            },
+            "get": {
+                "summary": "List all ESG Policies",
+                "tags": ["Governance Policies"],
+                "responses": {
+                    "200": { "description": "Policies retrieved successfully" }
+                }
+            }
+        },
+        "/governance/policies/{id}": {
+            "get": {
+                "summary": "Retrieve details of a policy",
+                "tags": ["Governance Policies"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Successful retrieval" }
+                }
+            },
+            "put": {
+                "summary": "Update an ESG Policy",
+                "tags": ["Governance Policies"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": { "type": "string", "enum": ["DRAFT", "ACTIVE", "ARCHIVED"], "example": "ACTIVE" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Policy updated successfully" }
+                }
+            },
+            "delete": {
+                "summary": "Soft delete an ESG Policy",
+                "tags": ["Governance Policies"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Policy deleted successfully" }
+                }
+            }
+        },
+        "/governance/acknowledgements/{id}/acknowledge": {
+            "post": {
+                "summary": "Acknowledge a published ESG Policy",
+                "description": "Signs and timestamps a pending policy acknowledgement record for the caller employee.",
+                "tags": ["Policy Acknowledgements"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Policy acknowledged successfully" }
+                }
+            }
+        },
+        "/governance/acknowledgements": {
+            "get": {
+                "summary": "List policy acknowledgements (filtered by role constraints)",
+                "tags": ["Policy Acknowledgements"],
+                "parameters": [
+                    {
+                        "name": "policyId",
+                        "in": "query",
+                        "required": false,
+                        "schema": { "type": "string" }
+                    },
+                    {
+                        "name": "employeeId",
+                        "in": "query",
+                        "required": false,
+                        "schema": { "type": "string" }
+                    },
+                    {
+                        "name": "pendingOnly",
+                        "in": "query",
+                        "required": false,
+                        "description": "If true, filters pending acknowledgements for current employee",
+                        "schema": { "type": "boolean" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Acknowledgements retrieved successfully" }
+                }
+            }
+        },
+        "/governance/audits": {
+            "post": {
+                "summary": "Log a compliance audit with checklist items",
+                "tags": ["Compliance Audits"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["title", "code", "departmentId", "auditorName", "auditDate"],
+                                "properties": {
+                                    "title": { "type": "string", "example": "Q1 Internal Safety Audit" },
+                                    "code": { "type": "string", "example": "AUD-002" },
+                                    "departmentId": { "type": "string", "format": "uuid" },
+                                    "auditorName": { "type": "string", "example": "Sarah Jenkins" },
+                                    "auditDate": { "type": "string", "format": "date-time" },
+                                    "checklists": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "required": ["title"],
+                                            "properties": {
+                                                "title": { "type": "string", "example": "Verify fire extinguisher inspect tags" },
+                                                "remarks": { "type": "string" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "Audit created successfully" }
+                }
+            },
+            "get": {
+                "summary": "List compliance audits",
+                "tags": ["Compliance Audits"],
+                "responses": {
+                    "200": { "description": "Audits retrieved successfully" }
+                }
+            }
+        },
+        "/governance/audits/{id}": {
+            "get": {
+                "summary": "Retrieve compliance audit details",
+                "tags": ["Compliance Audits"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Successful retrieval" }
+                }
+            },
+            "put": {
+                "summary": "Update compliance audit properties",
+                "tags": ["Compliance Audits"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Audit updated successfully" }
+                }
+            },
+            "delete": {
+                "summary": "Soft delete compliance audit",
+                "tags": ["Compliance Audits"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Audit deleted successfully" }
+                }
+            }
+        },
+        "/governance/audits/checklist/{id}": {
+            "put": {
+                "summary": "Verify or update status of an audit checklist item",
+                "description": "Triggers dynamic recalculation of parent audit score, maxScore, and percentage.",
+                "tags": ["Compliance Audits"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": { "type": "string", "enum": ["PENDING", "VERIFIED", "FAILED"], "example": "VERIFIED" },
+                                    "remarks": { "type": "string", "example": "All tags are up to date." },
+                                    "verifiedBy": { "type": "string", "example": "Sarah Jenkins" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Checklist item updated and parent scores recalculated" }
+                }
+            }
+        },
+        "/governance/issues": {
+            "post": {
+                "summary": "Log a compliance issue and assign an owner",
+                "description": "Requires ADMIN or ESG_MANAGER role. Triggers assignment notification to the owner employee.",
+                "tags": ["Compliance Issues"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["title", "description", "ownerId", "dueDate"],
+                                "properties": {
+                                    "auditId": { "type": "string", "format": "uuid" },
+                                    "title": { "type": "string", "example": "Unlabeled chemical containers in room 4B" },
+                                    "description": { "type": "string", "example": "Multiple containers found without regulatory OSHA labels." },
+                                    "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "example": "CRITICAL" },
+                                    "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "example": "HIGH" },
+                                    "ownerId": { "type": "string", "format": "uuid", "example": "2b085e43-2287-43cf-aa05-18870df22ff9" },
+                                    "dueDate": { "type": "string", "format": "date-time" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "Compliance issue logged successfully" }
+                }
+            },
+            "get": {
+                "summary": "List compliance issues (role-filtered)",
+                "tags": ["Compliance Issues"],
+                "responses": {
+                    "200": { "description": "Issues retrieved successfully" }
+                }
+            }
+        },
+        "/governance/issues/{id}": {
+            "get": {
+                "summary": "Retrieve compliance issue details",
+                "tags": ["Compliance Issues"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Successful retrieval" }
+                }
+            },
+            "put": {
+                "summary": "Update compliance issue details (or status)",
+                "description": "Allows owners to transition status (e.g. resolve) or managers to update full details. Resolving triggers resolution notifications to ESG admins.",
+                "tags": ["Compliance Issues"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Issue updated successfully" }
+                }
+            },
+            "delete": {
+                "summary": "Soft delete compliance issue",
+                "tags": ["Compliance Issues"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "format": "uuid" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Issue deleted successfully" }
+                }
+            }
+        },
+        "/governance/issues/overdue/flag": {
+            "post": {
+                "summary": "Trigger automated system scan for overdue compliance issues",
+                "description": "Requires ADMIN or ESG_MANAGER role. Searches for overdue active issues, dispatches warning alerts, and logs event timelines.",
+                "tags": ["Compliance Issues"],
+                "responses": {
+                    "200": { "description": "System scan finished successfully" }
+                }
+            }
         }
     },
     "components": {

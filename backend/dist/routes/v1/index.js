@@ -11,6 +11,7 @@ const employee_routes_1 = __importDefault(require("./employee.routes"));
 const role_routes_1 = __importDefault(require("./role.routes"));
 const health_routes_1 = __importDefault(require("./health.routes"));
 const environmental_routes_1 = __importDefault(require("./environmental.routes"));
+const governance_routes_1 = __importDefault(require("./governance.routes"));
 const router = (0, express_1.Router)();
 // Namespace all endpoint sub-routers
 router.use("/auth", auth_routes_1.default);
@@ -20,4 +21,5 @@ router.use("/employees", employee_routes_1.default);
 router.use("/roles", role_routes_1.default);
 router.use("/health", health_routes_1.default);
 router.use("/environmental", environmental_routes_1.default);
+router.use("/governance", governance_routes_1.default);
 exports.default = router;
