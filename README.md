@@ -1,203 +1,270 @@
 # EcoSphere – Enterprise ESG Management Platform
+
 ![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-blue?logo=postgresql) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
+
+EcoSphere is a unified, end-to-end corporate platform that enables organizations to record, audit, analyze, and optimize their **Environmental, Social, and Governance (ESG)** performance metrics. It combines a robust Express + PostgreSQL + Prisma backend with a premium, glassmorphic React frontend.
+
 ---
-## 🚀 Project Overview
-**Problem statement** – Modern enterprises must track, report, and improve their environmental, social, and governance (ESG) performance. Existing solutions are often fragmented, lack real‑time analytics, and do not integrate with internal HR/ERP data, making compliance and stakeholder reporting cumbersome.
-**EcoSphere solution** – A unified, end‑to‑end SaaS‑style platform that lets organizations manage **environmental**, **governance**, **social**, and **gamification** data from a single source. The system provides:
-- Secure role‑based access (RBAC) via JWT.
-- Robust CRUD APIs for all ESG entities.
-- Automated calculations, approval workflows, and activity logging.
-- Real‑time dashboards with an aggregate ESG score.
-- Swagger‑generated API documentation for rapid integration.
----
-## 🌟 Key Features
-| Feature | Description |
-|--------|-------------|
-| 🔐 **Authentication & RBAC** | JWT‑based login, refresh tokens, role‑specific permissions (Admin, ESG Manager, Department Head). |
-| 🌱 **Environmental Management** | Emission factors, carbon transactions, environmental goals, automated CO₂ calculations, approval workflow. |
-| 📜 **Governance Management** | ESG policies, acknowledgements, audits, compliance issues with lifecycle & severity tracking. |
-| 🤝 **Social Management** | CSR activities, volunteer participation, social goals, evidence upload. |
-| 🏆 **Gamification** | Challenges, XP, badges, rewards, leaderboard, reward‑approval workflow. |
-| 🔔 **Notifications** | Real‑time alerts for pending approvals, overdue issues, policy reminders. |
-| 📋 **Activity Logs** | Immutable audit trail for every create, update, and delete operation across modules. |
-| 📈 **Dashboard & ESG Score** | Consolidated view of Environmental, Governance, and Social KPIs plus composite ESG score. |
-| 📚 **Swagger API Documentation** | Interactive OpenAPI UI at `/api/docs`. |
----
-## 🛠️ Tech Stack
-### Frontend
-| Technology | Version |
-|------------|---------|
-| React | 18.x |
-| Vite | 5.x |
-| Tailwind CSS | 3.x |
-| Axios | 1.x |
-### Backend
-| Technology | Version |
-|------------|---------|
-| Node.js | 18.x |
-| Express.js | 4.x |
-| TypeScript | 5.x |
-| Prisma ORM | 5.x |
-| PostgreSQL | 15.x |
-| JWT Authentication | `jsonwebtoken` |
-| Zod Validation | 3.x |
----
-## 📐 System Architecture
+
+## 📌 Executive Architecture & Flows
+
+### 1. High-Level Architecture
+EcoSphere adopts a decoupled **Client-Server architecture** utilizing:
+- **Frontend Layer**: Single Page Application (SPA) built using React, Vite, and Tailwind CSS. State is managed locally and via Context APIs (e.g., `AuthContext`). All requests are made via a centralized Axios instance with authorization interceptors.
+- **API Gateway / Routing Layer**: Express Router utilizing custom Role-Based Access Control (RBAC) middlewares to validate JSON Web Tokens (JWT) and filter requests based on permission matrices.
+- **Service Layer**: Decoupled TS classes encapsulating business logic (e.g., carbon calculations, badge awarding algorithms, audit scheduling).
+- **Data Access Layer**: Repository Pattern backed by Prisma ORM communicating with a relational PostgreSQL database.
+
 ```mermaid
-flowchart TD
-    subgraph FE[Frontend (React/Vite)]
-        A[UI Components] --> B[Axios API Client]
+flowchart TB
+    subgraph Client ["Client (Frontend React App)"]
+        UI["UI Component View (Tailwind CSS)"]
+        Context["Auth / Session Context"]
+        AxiosClient["Axios HTTP client (Bearer JWT interceptor)"]
+        UI --> Context
+        UI --> AxiosClient
     end
-    subgraph BE[Backend (Express/TS)]
-        B --> C[Controllers]
-        C --> D[Services]
-        D --> E[Repositories]
-        E --> F[Prisma Client]
+
+    subgraph API_Gateway ["API Gateway / Routing Layer"]
+        Router["Express App Router (/api/v1)"]
+        AuthMiddleware["JWT Authentication Middleware"]
+        RBACMiddleware["Role-Based Authorization filter"]
+        Router --> AuthMiddleware
+        AuthMiddleware --> RBACMiddleware
     end
-    F --> G[(PostgreSQL)]
-    style FE fill:#f9f,stroke:#333,stroke-width:2px
-    style BE fill:#9cf,stroke:#333,stroke-width:2px
+
+    subgraph Service_Domain ["Business Service Domain"]
+        EnvSvc["Environmental Calculation Svc"]
+        GovSvc["Governance Policy & Audit Svc"]
+        SocSvc["CSR Engagement Svc"]
+        GamSvc["Gamification & Leaderboard Svc"]
+    end
+
+    subgraph Repository_Layer ["Data Access Layer (Prisma)"]
+        PrismaClient["Prisma Database Client"]
+    end
+
+    subgraph Database ["PostgreSQL Datastore"]
+        PG["PostgreSQL Instance"]
+    end
+
+    AxiosClient -- "JSON over HTTP" --> Router
+    RBACMiddleware --> EnvSvc & GovSvc & SocSvc & GamSvc
+    EnvSvc & GovSvc & SocSvc & GamSvc --> PrismaClient
+    PrismaClient --> PG
 ```
-**Flow**: React UI → Axios client → `/api/v1/...` controllers → services → repositories → Prisma → PostgreSQL.
+
 ---
-## 📂 Folder Structure
+
+## 💾 Database Schema Design (Low-Level Architecture)
+
+The system relies on PostgreSQL to ensure ACID compliance across ledger transactions and CSR volunteer activity completions.
+
+```mermaid
+erDiagram
+    Role {
+        string id PK
+        string code "ADMIN, ESG_MANAGER, etc"
+        string name
+    }
+    User {
+        string id PK
+        string email
+        string passwordHash
+        string roleId FK
+    }
+    Employee {
+        string id PK
+        string firstName
+        string lastName
+        string employeeId
+        string email
+        string userId FK
+        int xp
+        float volunteerHours
+    }
+    EmissionFactor {
+        string id PK
+        string name
+        float factor
+        string unit
+        string sourceType "Electricity, Diesel, etc"
+    }
+    CarbonTransaction {
+        string id PK
+        string sourceName
+        float quantity
+        float calculatedCo2
+        string status "PENDING, APPROVED, REJECTED"
+        string employeeId FK
+    }
+    ESGPolicy {
+        string id PK
+        string title
+        string code
+        string status "ACTIVE, DRAFT"
+    }
+    PolicyAcknowledgement {
+        string id PK
+        string policyId FK
+        string employeeId FK
+        datetime acknowledgedAt
+    }
+    Audit {
+        string id PK
+        string title
+        string code
+        string status "PLANNED, IN_PROGRESS, COMPLETED"
+        float score
+    }
+    Challenge {
+        string id PK
+        string title
+        int baseXp
+        string status "ACTIVE, COMPLETED"
+    }
+    Reward {
+        string id PK
+        string title
+        int xpCost
+        int stock
+    }
+    RewardRedemption {
+        string id PK
+        string rewardId FK
+        string employeeId FK
+        string status "PENDING, APPROVED"
+    }
+
+    User ||--|| Employee : "1-to-1 profile"
+    Role ||--o{ User : "defines RBAC"
+    Employee ||--o{ CarbonTransaction : "logs emissions"
+    ESGPolicy ||--o{ PolicyAcknowledgement : "tracks signatures"
+    Employee ||--o{ PolicyAcknowledgement : "signs policies"
+    Employee ||--o{ RewardRedemption : "redeems prizes"
+    Reward ||--o{ RewardRedemption : "deducts stock"
 ```
-EcoSphere/
-├─ backend/
-│   ├─ prisma/
-│   │   └─ schema.prisma
-│   ├─ src/
-│   │   ├─ config/
-│   │   ├─ controllers/
-│   │   │   ├─ environmental/
-│   │   │   ├─ governance/
-│   │   │   ├─ social/
-│   │   │   └─ gamification/
-│   │   ├─ middlewares/
-│   │   ├─ repositories/
-│   │   ├─ routes/
-│   │   │   └─ v1/
-│   │   ├─ services/
-│   │   └─ utils/
-│   └─ tsconfig.json
-├─ frontend/
-│   ├─ src/
-│   │   ├─ api/
-│   │   │   └─ axios.js
-│   │   ├─ components/
-│   │   ├─ context/
-│   │   │   └─ AuthContext.jsx
-│   │   ├─ pages/
-│   │   ├─ styles/
-│   │   └─ App.jsx
-│   ├─ public/
-│   ├─ vite.config.js
-│   └─ package.json
-└─ README.md
-```
-* **backend/** – Server‑side code, Prisma schema, config.
-* **frontend/** – React app, API client, context, UI.
-* **README.md** – This documentation.
+
 ---
-## 🗄️ Database Design
-**Why PostgreSQL?**
-- Strong ACID guarantees for reliable ESG data.
-- Rich relational features (foreign keys, cascading updates) simplify entity relationships.
-- Native JSON support for flexible metadata (e.g., evidence URLs).
-### Core Entities
-| Entity | Purpose |
-|--------|---------|
-| User | Authentication credentials, linked to an Employee. |
-| Employee | Business user, belongs to a Department, can have many roles. |
-| Department | Organizational unit; aggregates emissions, goals, and scores. |
-| Role | RBAC definitions (Admin, ESG Manager, Department Head). |
-| Environmental (EmissionFactor, CarbonTransaction, EnvironmentalGoal) | Track emissions, calculate CO₂, set reduction targets. |
-| Governance (ESGPolicy, PolicyAcknowledgement, Audit, ComplianceIssue) | Policy compliance, audit tracking, issue lifecycle. |
-| Social (CSRActivity, VolunteerParticipation, SocialGoal) | CSR initiatives, volunteer hours, social objectives. |
-| Gamification (Challenge, ChallengeParticipation, Badge, EmployeeBadge, Reward, RewardRedemption, Leaderboard) | Employee engagement, XP, badges, rewards, leaderboards. |
-| Notification | System‑generated alerts for approvals, overdue items, etc. |
-| ActivityLog | Immutable log of every CREATE/UPDATE/DELETE operation across modules. |
+
+## 🛠️ Feature Modules Specification
+
+### 🌱 Environmental Module
+- **Live Calculations Engine**: Carbon footprint is calculated dynamically using formula:
+  $$\text{CO}_2\text{e (kg)} = \text{Activity Quantity} \times \text{Emission Factor Coefficient}$$
+- **Ledger Verification Workflow**: Environmental transactions are submitted in `PENDING` states. ESG Managers or Administrators review entries to transition them to `APPROVED` or `REJECTED`, writing immutable entries to the `CarbonTransaction` ledger.
+
+### 📜 Governance Command
+- **Compliance Policy Acknowledgements**: Tracks policy drafts, publications, and signs them cryptographically using the employee profile context.
+- **Audit Checklist Records**: Standardizes compliance checklists across departments. Identifies and flags overdue issues dynamically based on calendar scheduling.
+
+### 🤝 Social Hub
+- **CSR Activity Workspace**: Enables employees to participate in local and global CSR programs.
+- **Evidence Verification**: Employees submit photographic or document-based URL evidence. Upon review, managers approve hours, which adds to the organization's composite engagement scores and credits the employee with XP.
+
+### 🏆 Gamification & Leaderboard
+- **Quest Completion Lifecycle**: Challenges grant XP rewards. When a challenge is marked complete, the system updates the employee's total accumulated XP.
+- **Rewards Redemption Bazaar**: Deducts XP from the employee balance, decreases item stock, and triggers an approval card for delivery.
+- **Real-Time Rankings**: Renders department and employee rank leaderboards directly from database aggregations.
+
 ---
-## ⚙️ Feature Details
-### Environmental
-- CRUD for emission factors, carbon transactions, goals.
-- Automatic CO₂ calculation (`quantity × emissionFactor`).
-- Approval workflow (Pending → Approved/Rejected).
-### Governance
-- Policy management, employee acknowledgements, audit checklists, compliance issue lifecycle with severity & priority.
-- Automated overdue‑issue detection & notifications.
-### Social
-- CSR activity catalog, volunteer participation tracking, evidence upload, social‑goal management.
-### Gamification
-- Challenges with XP, badge unlocking, reward catalog, redemption workflow with approval states, and global leaderboard.
-### Authentication & RBAC
-- JWT access & refresh tokens, password hashing (bcrypt).
-- Role‑based access control enforced by middleware.
-### Dashboard & ESG Score
-- Aggregated KPIs and composite ESG score (e.g., 40 % Env, 30 % Social, 30 % Gov).
-### Notifications & Activity Logs
-- Real‑time API notifications stored in `Notification` table.
-- `ActivityLog` captures every mutable operation for auditability.
+
+## 🚀 Setup & Execution Guide
+
+### Prerequisites
+- **Node.js** (v18.x or above)
+- **PostgreSQL** (v15.x or above)
+- **NPM** (v9.x or above)
+
 ---
-## 📦 Installation
-### Backend
+
+### Step 1: Clone and Dependencies Installation
+Install dependencies for both projects:
 ```bash
+# Backend installation
 cd backend
 npm install
-# create a .env (see below)
+
+# Frontend installation
+cd ../frontend
+npm install
+```
+
+---
+
+### Step 2: Database Configuration
+1. Make sure your local PostgreSQL database is running.
+2. Inside `backend/`, create a `.env` file based on the environment options:
+```env
+PORT=5000
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/ecosphere?schema=public"
+JWT_ACCESS_SECRET="ecosphere_access_secret_super_key_123"
+JWT_REFRESH_SECRET="ecosphere_refresh_secret_super_key_456"
+JWT_ACCESS_EXPIRY="15m"
+JWT_REFRESH_EXPIRY="7d"
+```
+
+---
+
+### Step 3: Run Database Migrations & Seeds
+Generate Prisma client schemas, execute migrations to set up relational tables, and seed master directories:
+```bash
+cd backend
+
+# Apply DB migrations
+npm run prisma:migrate
+
+# Seed data (Creates default users, factors, policies and challenges)
+npm run seed
+```
+
+---
+
+### Step 4: Booting Up the Platform
+
+#### 1. Running the Backend Server
+```bash
+cd backend
 npm run dev
 ```
-### Frontend
+*The backend API server launches at `http://localhost:5000`.*
+*Interactive API Swagger Documentation is available at `http://localhost:5000/api/docs`.*
+
+#### 2. Running the Frontend Server
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
-Default ports: backend `http://localhost:3000`, frontend `http://localhost:5173` (proxying API calls).
----
-## 🔧 Environment Variables
-| Variable | Description |
-|----------|-------------|
-| DATABASE_URL | PostgreSQL connection string. |
-| JWT_SECRET | Secret for signing access tokens. |
-| JWT_REFRESH_SECRET | Secret for refresh tokens. |
-| ACCESS_TOKEN_EXPIRES_IN | Access token TTL (e.g., `15m`). |
-| REFRESH_TOKEN_EXPIRES_IN | Refresh token TTL (e.g., `7d`). |
-| PORT | Backend HTTP port (default `3000`). |
-| CORS_ORIGIN | Allowed origin for the frontend (`http://localhost:5173`). |
-| SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS | Optional email settings for notifications. |
-| FILE_STORAGE_PATH | Directory for uploaded evidence files. |
-Create a `.env` file in `backend/` with these entries.
----
-## 📖 API Documentation
-Swagger UI: `http://localhost:3000/api/docs` – interactive reference for all `/api/v1/...` endpoints.
----
-## 🔐 Security
-- **JWT** – Signed access & refresh tokens.
-- **RBAC** – Middleware enforces role permissions.
-- **Password Hashing** – bcrypt (work factor 12).
-- **Input Validation** – Zod schemas.
-- **Protected Routes** – All CRUD endpoints require a valid JWT; only `/auth/*` are public.
----
-## 🚀 Future Enhancements
-| Idea | Benefit |
-|------|---------|
-| Bulk Import/Export | Faster onboarding of historical ESG data. |
-| ML Emission Forecasts | Predict future emissions trends. |
-| Multi‑Tenant Support | SaaS for multiple companies. |
-| GraphQL API | Flexible client queries. |
-| WebSocket Notifications | Real‑time dashboard updates. |
-| Advanced Reporting | PDF/Excel exports, scheduled reports. |
-| ERP/HRIS Integration | Auto‑sync employees, departments, payroll. |
----
-## 👥 Team Members
-| Role | Name |
-|------|------|
-| Backend Developer | *[Your Name]* |
-| Frontend Developer | *[Your Name]* |
-| Project Lead | *[Your Name]* |
-*(Replace placeholders with actual contributor names.)*
----
-## 📄 License
-Licensed under the **MIT License** – see `LICENSE` for details.
+*The frontend application boots at `http://localhost:5173`.*
 
+---
+
+## 🔧 Troubleshooting Compilation Gotchas
+
+### 1. `ts-node` express Request compilation crashes:
+If you run `npm run dev` and hit compiler type-errors like:
+```text
+TSError: ⨯ Unable to compile TypeScript:
+src/controllers/DepartmentController.ts: error TS2339: Property 'user' does not exist on type 'Request'.
+```
+This happens because `ts-node` does not read custom typescript type declarations (`src/types/express.d.ts`) by default without full file loading. 
+
+**Solution**:
+We have configured `"ts-node": { "files": true }` in [`tsconfig.json`](file:///C:/Users/YUVRAJ%20KABADWAL/Downloads/EcoSphere/backend/tsconfig.json) to explicitly enable this behavior, preventing any TS compilation failures when starting nodemon.
+
+### 2. Database authentication failures (Prisma Code `P1000`):
+Ensure that the password in the `DATABASE_URL` matches your local Postgres password. If PostgreSQL is running on a port other than `5432`, update the port value accordingly in the URL.
+
+---
+
+## 👥 Seeding Credentials
+
+Access the administrator control panels with the seeded root account:
+- **Email**: `admin@ecosphere.com`
+- **Password**: `admin123`
+
+---
+
+## 📄 License
+Licensed under the [MIT License](LICENSE).
