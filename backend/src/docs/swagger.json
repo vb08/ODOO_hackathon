@@ -1,0 +1,507 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoSphere ESG Platform - Environmental Module API",
+    "description": "API documentation for the Environmental Module of the EcoSphere Enterprise ESG Management Platform.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Base Version 1 Endpoint"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/environmental/dashboard/summary": {
+      "get": {
+        "summary": "Retrieve company-wide environmental dashboard metrics",
+        "description": "Returns total emissions, department-wise emissions, monthly trends, and goal progress summaries for a specific year.",
+        "tags": ["Dashboard"],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "description": "Year to fetch summary for (defaults to current year)",
+            "schema": {
+              "type": "integer",
+              "example": 2026
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Environmental dashboard metrics retrieved successfully." },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalEmissions": { "type": "number", "example": 12450.75 },
+                        "departmentEmissions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "departmentId": { "type": "string", "format": "uuid" },
+                              "departmentName": { "type": "string", "example": "Operations" },
+                              "emissions": { "type": "number", "example": 5400 }
+                            }
+                          }
+                        },
+                        "monthlyEmissions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": { "type": "integer", "example": 3 },
+                              "emissions": { "type": "number", "example": 1050 }
+                            }
+                          }
+                        },
+                        "monthlyEmissionsBySource": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": { "type": "integer", "example": 3 },
+                              "sourceType": { "type": "string", "example": "Electricity" },
+                              "emissions": { "type": "number", "example": 800 }
+                            }
+                          }
+                        },
+                        "goalProgress": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "departmentId": { "type": "string", "format": "uuid" },
+                              "departmentName": { "type": "string", "example": "Operations" },
+                              "year": { "type": "integer", "example": 2026 },
+                              "targetEmissions": { "type": "number", "example": 10000 },
+                              "currentEmissions": { "type": "number", "example": 5400 },
+                              "progressPercentage": { "type": "number", "example": 54.0 },
+                              "status": { "type": "string", "example": "ACTIVE" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/environmental/dashboard/department/{departmentId}": {
+      "get": {
+        "summary": "Retrieve specific department goal progress",
+        "tags": ["Dashboard"],
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 2026
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department goal progress retrieved successfully"
+          }
+        }
+      }
+    },
+    "/environmental/factors": {
+      "post": {
+        "summary": "Create a new emission factor",
+        "description": "Requires ADMIN or ESG_MANAGER role.",
+        "tags": ["Emission Factors"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "factor", "unit", "sourceType"],
+                "properties": {
+                  "name": { "type": "string", "example": "Grid Electricity" },
+                  "factor": { "type": "number", "example": 0.85 },
+                  "unit": { "type": "string", "example": "kWh" },
+                  "sourceType": {
+                    "type": "string",
+                    "enum": ["Electricity", "Diesel", "Petrol", "Natural Gas", "Water", "Waste", "Business Travel"],
+                    "example": "Electricity"
+                  },
+                  "description": { "type": "string", "example": "National grid average emission factor" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Emission factor created successfully"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get list of all emission factors",
+        "tags": ["Emission Factors"],
+        "parameters": [
+          {
+            "name": "sourceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Emission factors retrieved successfully"
+          }
+        }
+      }
+    },
+    "/environmental/factors/{id}": {
+      "get": {
+        "summary": "Get specific emission factor by ID",
+        "tags": ["Emission Factors"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval" }
+        }
+      },
+      "put": {
+        "summary": "Update an emission factor",
+        "description": "Requires ADMIN or ESG_MANAGER role.",
+        "tags": ["Emission Factors"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "factor": { "type": "number", "example": 0.90 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Emission factor updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete an emission factor",
+        "description": "Requires ADMIN role.",
+        "tags": ["Emission Factors"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Emission factor deleted successfully" }
+        }
+      }
+    },
+    "/environmental/transactions": {
+      "post": {
+        "summary": "Log a carbon transaction record (Pending Approval)",
+        "description": "Creates a pending carbon transaction. Department heads can log for their own department; ESG Managers/Admins can log for any department.",
+        "tags": ["Carbon Transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["departmentId", "emissionFactorId", "quantity"],
+                "properties": {
+                  "departmentId": { "type": "string", "format": "uuid", "example": "4a085d43-2287-43cf-aa05-18870df22ff9" },
+                  "emissionFactorId": { "type": "string", "format": "uuid", "example": "7b085e43-2287-43cf-aa05-18870df22aa0" },
+                  "quantity": { "type": "number", "example": 1500 },
+                  "evidenceUrl": { "type": "string", "format": "uri", "example": "https://s3.amazonaws.com/ecosphere-bills/electric-june-2026.pdf" },
+                  "transactionDate": { "type": "string", "format": "date-time", "example": "2026-06-15T10:00:00Z" },
+                  "description": { "type": "string", "example": "Electricity bill for corporate office - June 2026" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Carbon transaction logged successfully"
+          }
+        }
+      },
+      "get": {
+        "summary": "List all carbon transactions",
+        "description": "Admins/ESG Managers see all transactions. Department Heads are filtered to see only transactions of their own department.",
+        "tags": ["Carbon Transactions"],
+        "responses": {
+          "200": {
+            "description": "Transactions retrieved successfully"
+          }
+        }
+      }
+    },
+    "/environmental/transactions/{id}": {
+      "get": {
+        "summary": "Get details of a carbon transaction",
+        "tags": ["Carbon Transactions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval" }
+        }
+      },
+      "put": {
+        "summary": "Update carbon transaction details",
+        "description": "Updates a carbon transaction. Requires department validation and permission checks.",
+        "tags": ["Carbon Transactions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "number", "example": 1800 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Transaction updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete a carbon transaction",
+        "tags": ["Carbon Transactions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Transaction deleted successfully" }
+        }
+      }
+    },
+    "/environmental/transactions/{id}/approve": {
+      "post": {
+        "summary": "Approve or Reject a Carbon Transaction",
+        "description": "Allows ESG Managers and Admins to approve/reject logged pending transactions. Approval triggers automatic addition of transaction emissions to Department.totalEmissions. Rejection does not modify metrics.",
+        "tags": ["Carbon Transactions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["APPROVED", "REJECTED"],
+                    "example": "APPROVED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transaction successfully updated and department metrics calculated"
+          }
+        }
+      }
+    },
+    "/environmental/goals": {
+      "post": {
+        "summary": "Establish an environmental emission limit goal",
+        "description": "Requires ADMIN or ESG_MANAGER role.",
+        "tags": ["Environmental Goals"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["departmentId", "targetEmissions", "year"],
+                "properties": {
+                  "departmentId": { "type": "string", "format": "uuid", "example": "4a085d43-2287-43cf-aa05-18870df22ff9" },
+                  "targetEmissions": { "type": "number", "example": 8000.0 },
+                  "year": { "type": "integer", "example": 2026 },
+                  "description": { "type": "string", "example": "Target maximum emissions for Operations department - FY2026" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Environmental goal created successfully"
+          }
+        }
+      },
+      "get": {
+        "summary": "List environmental goals",
+        "description": "Admins/ESG Managers see all department goals. Department Heads see only goals defined for their department.",
+        "tags": ["Environmental Goals"],
+        "responses": {
+          "200": {
+            "description": "Goals retrieved successfully"
+          }
+        }
+      }
+    },
+    "/environmental/goals/{id}": {
+      "get": {
+        "summary": "Get specific environmental goal by ID",
+        "tags": ["Environmental Goals"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval" }
+        }
+      },
+      "put": {
+        "summary": "Update an environmental goal",
+        "description": "Requires ADMIN or ESG_MANAGER role. Status transitions to ACHIEVED automatically trigger success alert notifications to related users.",
+        "tags": ["Environmental Goals"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetEmissions": { "type": "number", "example": 7500.0 },
+                  "status": {
+                    "type": "string",
+                    "enum": ["ACTIVE", "ACHIEVED", "EXCEEDED"],
+                    "example": "ACHIEVED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Goal updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete an environmental goal",
+        "description": "Requires ADMIN role.",
+        "tags": ["Environmental Goals"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Goal deleted successfully" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import categoryRoutes from "./category.routes";
 import employeeRoutes from "./employee.routes";
 import roleRoutes from "./role.routes";
 import healthRoutes from "./health.routes";
+import environmentalRoutes from "./environmental.routes";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use("/categories", categoryRoutes);
 router.use("/employees", employeeRoutes);
 router.use("/roles", roleRoutes);
 router.use("/health", healthRoutes);
+router.use("/environmental", environmentalRoutes);
 
 export default router;
