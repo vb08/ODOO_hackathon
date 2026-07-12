@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const EmployeeController_1 = require("../../controllers/EmployeeController");
+const auth_1 = require("../../middlewares/auth");
+const rbac_1 = require("../../middlewares/rbac");
+const validate_1 = require("../../middlewares/validate");
+const employee_validation_1 = require("../../validations/employee.validation");
+const asyncHandler_1 = require("../../middlewares/asyncHandler");
+const roles_1 = require("../../constants/roles");
+const router = (0, express_1.Router)();
+const controller = new EmployeeController_1.EmployeeController();
+// All employee profile APIs require authentication
+router.use(auth_1.authenticate);
+router.post("/", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN]), (0, validate_1.validate)(employee_validation_1.createEmployeeSchema), (0, asyncHandler_1.asyncHandler)(controller.create));
+router.get("/", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN, roles_1.RoleCode.ESG_MANAGER, roles_1.RoleCode.DEPARTMENT_HEAD]), (0, asyncHandler_1.asyncHandler)(controller.findAll));
+router.get("/:id", (0, validate_1.validate)(employee_validation_1.getEmployeeByIdSchema), (0, asyncHandler_1.asyncHandler)(controller.findById));
+router.put("/:id", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN]), (0, validate_1.validate)(employee_validation_1.updateEmployeeSchema), (0, asyncHandler_1.asyncHandler)(controller.update));
+router.delete("/:id", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN]), (0, validate_1.validate)(employee_validation_1.getEmployeeByIdSchema), (0, asyncHandler_1.asyncHandler)(controller.delete));
+exports.default = router;

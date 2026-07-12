@@ -1,0 +1,1 @@
+Gamification Module: Reserved for ESG Challenges, Badge auto-awards, Employee XP tracking, Leaderboards, and Reward redeem records.
