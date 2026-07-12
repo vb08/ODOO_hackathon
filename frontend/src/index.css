@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Outfit', sans-serif;
+    @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-violet-500/30 selection:text-violet-200 overflow-x-hidden;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-zinc-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(24, 24, 27, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    @apply rounded-2xl shadow-xl transition-all duration-300;
+  }
+
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    @apply shadow-2xl;
+  }
+
+  .glass-card-no-hover {
+    background: rgba(24, 24, 27, 0.65);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    @apply rounded-2xl shadow-xl;
+  }
+
+  .glass-input {
+    background: rgba(9, 9, 11, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    @apply text-zinc-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all placeholder:text-zinc-500;
+  }
+
+  .glass-button-primary {
+    @apply px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .badge-glow-unlocked {
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  }
+}
+
+/* Animations and Transitions */
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.glow-indigo {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.glow-violet {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+.overdue-glow {
+  animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
