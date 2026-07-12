@@ -97,6 +97,37 @@ async function main() {
     logger.info("Admin user already seeded.");
   }
 
+  // 4. Seed Initial Emission Factors
+  const factorsData = [
+    { name: "Grid Electricity", factor: 0.85, unit: "kWh", sourceType: "Electricity", description: "Average CO2 emissions per kWh from the national power grid" },
+    { name: "Diesel Fuel", factor: 2.68, unit: "liter", sourceType: "Diesel", description: "CO2 emissions per liter of diesel fuel burned" },
+    { name: "Petrol Fuel", factor: 2.31, unit: "liter", sourceType: "Petrol", description: "CO2 emissions per liter of petrol fuel burned" },
+    { name: "Natural Gas", factor: 1.88, unit: "m3", sourceType: "Natural Gas", description: "CO2 emissions per cubic meter of natural gas" },
+    { name: "Water Consumption", factor: 0.34, unit: "m3", sourceType: "Water", description: "Embedded emissions in water sourcing and processing per cubic meter" },
+    { name: "General Waste landfill", factor: 0.52, unit: "kg", sourceType: "Waste", description: "Methane equivalent emissions per kg of unsorted waste sent to landfill" },
+    { name: "Business Travel (Air short-haul)", factor: 0.15, unit: "km", sourceType: "Business Travel", description: "CO2 emissions per passenger-kilometer for flights under 1500km" }
+  ];
+
+  // Retrieve admin user id for audits
+  const admin = await prisma.user.findFirst({ where: { email: adminEmail } });
+  const adminId = admin ? admin.id : null;
+
+  for (const factor of factorsData) {
+    await prisma.emissionFactor.upsert({
+      where: { name: factor.name },
+      update: { factor: factor.factor, unit: factor.unit, sourceType: factor.sourceType, description: factor.description },
+      create: {
+        name: factor.name,
+        factor: factor.factor,
+        unit: factor.unit,
+        sourceType: factor.sourceType,
+        description: factor.description,
+        createdByUserId: adminId
+      }
+    });
+    logger.info(`Emission Factor upserted: ${factor.name}`);
+  }
+
   logger.info("🎉 Database seeding completed successfully.");
 }
 
