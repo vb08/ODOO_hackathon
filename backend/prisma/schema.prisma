@@ -122,6 +122,42 @@ model User {
   updatedComplianceIssues    ComplianceIssue[]    @relation("ComplianceIssueUpdatedBy")
   deletedComplianceIssues    ComplianceIssue[]    @relation("ComplianceIssueDeletedBy")
 
+  createdCSRActivities        CSRActivity[]        @relation("CSRActivityCreatedBy")
+  updatedCSRActivities        CSRActivity[]        @relation("CSRActivityUpdatedBy")
+  deletedCSRActivities        CSRActivity[]        @relation("CSRActivityDeletedBy")
+
+  createdVolunteerParticipations VolunteerParticipation[] @relation("VolunteerParticipationCreatedBy")
+  updatedVolunteerParticipations VolunteerParticipation[] @relation("VolunteerParticipationUpdatedBy")
+  deletedVolunteerParticipations VolunteerParticipation[] @relation("VolunteerParticipationDeletedBy")
+
+  createdSocialGoals          SocialGoal[]          @relation("SocialGoalCreatedBy")
+  updatedSocialGoals          SocialGoal[]          @relation("SocialGoalUpdatedBy")
+  deletedSocialGoals          SocialGoal[]          @relation("SocialGoalDeletedBy")
+
+  createdChallenges           Challenge[]           @relation("ChallengeCreatedBy")
+  updatedChallenges           Challenge[]           @relation("ChallengeUpdatedBy")
+  deletedChallenges           Challenge[]           @relation("ChallengeDeletedBy")
+
+  createdChallengeParticipations ChallengeParticipation[] @relation("ChallengeParticipationCreatedBy")
+  updatedChallengeParticipations ChallengeParticipation[] @relation("ChallengeParticipationUpdatedBy")
+  deletedChallengeParticipations ChallengeParticipation[] @relation("ChallengeParticipationDeletedBy")
+
+  createdBadges               Badge[]               @relation("BadgeCreatedBy")
+  updatedBadges               Badge[]               @relation("BadgeUpdatedBy")
+  deletedBadges               Badge[]               @relation("BadgeDeletedBy")
+
+  createdEmployeeBadges       EmployeeBadge[]       @relation("EmployeeBadgeCreatedBy")
+  updatedEmployeeBadges       EmployeeBadge[]       @relation("EmployeeBadgeUpdatedBy")
+  deletedEmployeeBadges       EmployeeBadge[]       @relation("EmployeeBadgeDeletedBy")
+
+  createdRewards              Reward[]              @relation("RewardCreatedBy")
+  updatedRewards              Reward[]              @relation("RewardUpdatedBy")
+  deletedRewards              Reward[]              @relation("RewardDeletedBy")
+
+  createdRewardRedemptions    RewardRedemption[]    @relation("RewardRedemptionCreatedBy")
+  updatedRewardRedemptions    RewardRedemption[]    @relation("RewardRedemptionUpdatedBy")
+  deletedRewardRedemptions    RewardRedemption[]    @relation("RewardRedemptionDeletedBy")
+
   // Recipient Notifications
   notifications        Notification[] @relation("NotificationRecipient")
 
@@ -150,6 +186,7 @@ model Department {
   carbonTransactions CarbonTransaction[]
   environmentalGoals EnvironmentalGoal[]
   audits             Audit[]
+  socialGoals        SocialGoal[]
 
   // BaseModel Audits
   createdByUserId String?
@@ -212,9 +249,20 @@ model Employee {
   // Managed Department Relation (Manager of Department)
   managedDepartment Department? @relation("DepartmentManager")
 
+  // Gamification & Social Metrics
+  xp              Int         @default(0)
+  volunteerHours  Float       @default(0.0)
+
   // Governance Relations
   policyAcknowledgements PolicyAcknowledgement[]
   ownedComplianceIssues  ComplianceIssue[]
+
+  // Social & Gamification Relations
+  volunteerParticipations VolunteerParticipation[]
+  challengeParticipations ChallengeParticipation[]
+  employeeBadges          EmployeeBadge[]
+  rewardRedemptions       RewardRedemption[]
+  leaderboardRow          Leaderboard?
 
   // BaseModel Audits
   createdByUserId String?
@@ -548,5 +596,265 @@ model ComplianceIssue {
   @@index([auditId])
   @@index([ownerId])
   @@index([status])
+}
+
+// ==================================================
+// SOCIAL MODULE
+// ==================================================
+
+model CSRActivity {
+  id                  String    @id @default(uuid())
+  title               String
+  description         String
+  activityDate        DateTime
+  volunteerHoursEarned Float     @default(0.0)
+  status              String    @default("PLANNED") // PLANNED, ACTIVE, COMPLETED, CANCELLED
+  maxParticipants     Int?
+
+  // BaseModel Audits
+  createdByUserId     String?
+  createdByUser       User?     @relation("CSRActivityCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId     String?
+  updatedByUser       User?     @relation("CSRActivityUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId     String?
+  deletedByUser       User?     @relation("CSRActivityDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  participations      VolunteerParticipation[]
+
+  @@index([status])
+}
+
+model VolunteerParticipation {
+  id              String      @id @default(uuid())
+  csrActivityId   String
+  csrActivity     CSRActivity @relation(fields: [csrActivityId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  status          String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  proofUrl        String?
+  proofStatus     String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  hoursEarned     Float       @default(0.0)
+  acknowledgedAt  DateTime?
+
+  // BaseModel Audits
+  createdByUserId String?
+  createdByUser   User?       @relation("VolunteerParticipationCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId String?
+  updatedByUser   User?       @relation("VolunteerParticipationUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId String?
+  deletedByUser   User?       @relation("VolunteerParticipationDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([csrActivityId, employeeId])
+  @@index([csrActivityId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model SocialGoal {
+  id                   String      @id @default(uuid())
+  title                String
+  description          String?
+  targetVolunteerHours Float
+  year                 Int
+  departmentId         String?
+  department           Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  status               String      @default("ACTIVE") // ACTIVE, ACHIEVED, EXCEEDED
+
+  // BaseModel Audits
+  createdByUserId      String?
+  createdByUser        User?       @relation("SocialGoalCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId      String?
+  updatedByUser        User?       @relation("SocialGoalUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId      String?
+  deletedByUser        User?       @relation("SocialGoalDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+
+  @@index([year])
+  @@index([departmentId])
+}
+
+// ==================================================
+// GAMIFICATION MODULE
+// ==================================================
+
+model Challenge {
+  id                   String      @id @default(uuid())
+  title                String
+  description          String
+  baseXp               Int         @default(0)
+  difficultyMultiplier Float       @default(1.0)
+  completionBonus      Int         @default(0)
+  earlySubmissionBonus Int         @default(0)
+  status               String      @default("DRAFT") // DRAFT, ACTIVE, UNDER_REVIEW, COMPLETED, ARCHIVED
+  startDate            DateTime
+  endDate              DateTime
+
+  // BaseModel Audits
+  createdByUserId      String?
+  createdByUser        User?       @relation("ChallengeCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId      String?
+  updatedByUser        User?       @relation("ChallengeUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId      String?
+  deletedByUser        User?       @relation("ChallengeDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+
+  // Relations
+  participations       ChallengeParticipation[]
+
+  @@index([status])
+}
+
+model ChallengeParticipation {
+  id                String      @id @default(uuid())
+  challengeId       String
+  challenge         Challenge   @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  employeeId        String
+  employee          Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  status            String      @default("JOINED") // JOINED, COMPLETED, FAILED
+  proofUrl          String?
+  completedAt       DateTime?
+  isEarlySubmission Boolean     @default(false)
+
+  // BaseModel Audits
+  createdByUserId   String?
+  createdByUser     User?       @relation("ChallengeParticipationCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId   String?
+  updatedByUser     User?       @relation("ChallengeParticipationUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId   String?
+  deletedByUser     User?       @relation("ChallengeParticipationDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+
+  @@unique([challengeId, employeeId])
+  @@index([challengeId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model Badge {
+  id              String          @id @default(uuid())
+  name            String          @unique
+  description     String
+  xpThreshold     Int
+  iconUrl         String?
+
+  // BaseModel Audits
+  createdByUserId String?
+  createdByUser   User?           @relation("BadgeCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId String?
+  updatedByUser   User?           @relation("BadgeUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId String?
+  deletedByUser   User?           @relation("BadgeDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  employeeBadges  EmployeeBadge[]
+
+  @@index([xpThreshold])
+}
+
+model EmployeeBadge {
+  id              String    @id @default(uuid())
+  employeeId      String
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  badgeId         String
+  badge           Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  unlockedAt      DateTime  @default(now())
+
+  // BaseModel Audits
+  createdByUserId String?
+  createdByUser   User?     @relation("EmployeeBadgeCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId String?
+  updatedByUser   User?     @relation("EmployeeBadgeUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId String?
+  deletedByUser   User?     @relation("EmployeeBadgeDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([employeeId, badgeId])
+  @@index([employeeId])
+  @@index([badgeId])
+}
+
+model Reward {
+  id              String             @id @default(uuid())
+  title           String
+  description     String
+  xpCost          Int
+  stock           Int                @default(0)
+
+  // BaseModel Audits
+  createdByUserId String?
+  createdByUser   User?              @relation("RewardCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId String?
+  updatedByUser   User?              @relation("RewardUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId String?
+  deletedByUser   User?              @relation("RewardDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  redemptions     RewardRedemption[]
+}
+
+model RewardRedemption {
+  id              String    @id @default(uuid())
+  rewardId        String
+  reward          Reward    @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  redeemedAt      DateTime  @default(now())
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, DELIVERED
+
+  // BaseModel Audits
+  createdByUserId String?
+  createdByUser   User?     @relation("RewardRedemptionCreatedBy", fields: [createdByUserId], references: [id])
+  updatedByUserId String?
+  updatedByUser   User?     @relation("RewardRedemptionUpdatedBy", fields: [updatedByUserId], references: [id])
+  deletedByUserId String?
+  deletedByUser   User?     @relation("RewardRedemptionDeletedBy", fields: [deletedByUserId], references: [id])
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  @@index([rewardId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model Leaderboard {
+  id         String   @id @default(uuid())
+  employeeId String   @unique
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  xp         Int      @default(0)
+  rank       Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@index([xp])
 }
 

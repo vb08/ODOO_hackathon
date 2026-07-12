@@ -879,6 +879,459 @@
           "200": { "description": "System scan finished successfully" }
         }
       }
+    },
+    "/social/dashboard/summary": {
+      "get": {
+        "summary": "Retrieve ESG Social and Gamification dashboard metrics",
+        "description": "Returns volunteer hours, CSR activities count, active challenges count, composite ESG Score, rankings, badge distribution, and recent redemptions.",
+        "tags": ["Social Dashboard"],
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "query",
+            "required": false,
+            "description": "Department ID to filter metrics (optional for Admins/ESG Managers; auto-applied for Department Heads)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Dashboard summary retrieved successfully" }
+        }
+      }
+    },
+    "/social/activities": {
+      "post": {
+        "summary": "Create a new CSR Activity",
+        "tags": ["CSR Activities"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "activityDate", "volunteerHoursEarned"],
+                "properties": {
+                  "title": { "type": "string", "example": "Tree Planting Drive" },
+                  "description": { "type": "string", "example": "Plant trees in local park." },
+                  "activityDate": { "type": "string", "format": "date-time" },
+                  "volunteerHoursEarned": { "type": "number", "example": 3 },
+                  "maxParticipants": { "type": "integer", "example": 20 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Activity created successfully" }
+        }
+      },
+      "get": {
+        "summary": "List all CSR Activities",
+        "tags": ["CSR Activities"],
+        "responses": {
+          "200": { "description": "Activities retrieved successfully" }
+        }
+      }
+    },
+    "/social/activities/participations/me": {
+      "get": {
+        "summary": "Retrieve CSR participations for the logged-in employee",
+        "tags": ["CSR Activities"],
+        "responses": {
+          "200": { "description": "Participations list retrieved" }
+        }
+      }
+    },
+    "/social/activities/participations/all": {
+      "get": {
+        "summary": "Retrieve all volunteer participations (filtered by department for Department Heads)",
+        "tags": ["CSR Activities"],
+        "responses": {
+          "200": { "description": "Participations list retrieved" }
+        }
+      }
+    },
+    "/social/activities/{id}": {
+      "get": {
+        "summary": "Retrieve details of a CSR activity",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval" }
+        }
+      },
+      "put": {
+        "summary": "Update CSR activity details",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Activity updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete CSR activity",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Activity deleted successfully" }
+        }
+      }
+    },
+    "/social/activities/{id}/join": {
+      "post": {
+        "summary": "Join a CSR Activity",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Joined activity successfully" }
+        }
+      }
+    },
+    "/social/activities/{id}/proof": {
+      "post": {
+        "summary": "Upload participation proof for a CSR Activity",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["proofUrl"],
+                "properties": {
+                  "proofUrl": { "type": "string", "example": "http://ecosphere.com/receipt.pdf" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Proof uploaded successfully" }
+        }
+      }
+    },
+    "/social/activities/participations/{id}/approve": {
+      "put": {
+        "summary": "Approve/verify volunteer participation proof",
+        "description": "Requires ADMIN, ESG_MANAGER, or DEPARTMENT_HEAD role. Approving verifies hours and adds XP to employee.",
+        "tags": ["CSR Activities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status", "proofStatus"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["APPROVED", "REJECTED"], "example": "APPROVED" },
+                  "proofStatus": { "type": "string", "enum": ["VERIFIED", "REJECTED"], "example": "VERIFIED" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Participation verified" }
+        }
+      }
+    },
+    "/social/goals": {
+      "post": {
+        "summary": "Create a new Social Goal",
+        "tags": ["Social Goals"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "targetVolunteerHours", "year"],
+                "properties": {
+                  "title": { "type": "string", "example": "2026 ESG Volunteer Goal" },
+                  "description": { "type": "string" },
+                  "targetVolunteerHours": { "type": "number", "example": 200 },
+                  "year": { "type": "integer", "example": 2026 },
+                  "departmentId": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Social goal created successfully" }
+        }
+      },
+      "get": {
+        "summary": "List all Social Goals",
+        "tags": ["Social Goals"],
+        "responses": {
+          "200": { "description": "Social goals retrieved" }
+        }
+      }
+    },
+    "/gamification/leaderboard": {
+      "get": {
+        "summary": "Retrieve dynamic leaderboard rankings based on XP",
+        "tags": ["Gamification Dashboard"],
+        "responses": {
+          "200": { "description": "Leaderboard standings retrieved successfully" }
+        }
+      }
+    },
+    "/gamification/challenges": {
+      "post": {
+        "summary": "Create a new Challenge",
+        "tags": ["Gamification Challenges"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "baseXp", "difficultyMultiplier", "completionBonus", "earlySubmissionBonus", "startDate", "endDate"],
+                "properties": {
+                  "title": { "type": "string", "example": "Zero Waste Week" },
+                  "description": { "type": "string", "example": "Generate zero single-use plastic waste for 7 days." },
+                  "baseXp": { "type": "integer", "example": 100 },
+                  "difficultyMultiplier": { "type": "number", "example": 1.2 },
+                  "completionBonus": { "type": "integer", "example": 20 },
+                  "earlySubmissionBonus": { "type": "integer", "example": 15 },
+                  "startDate": { "type": "string", "format": "date-time" },
+                  "endDate": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Challenge created" }
+        }
+      },
+      "get": {
+        "summary": "List all Challenges",
+        "tags": ["Gamification Challenges"],
+        "responses": {
+          "200": { "description": "Challenges retrieved" }
+        }
+      }
+    },
+    "/gamification/challenges/{id}/join": {
+      "post": {
+        "summary": "Join a Challenge",
+        "tags": ["Gamification Challenges"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Joined successfully" }
+        }
+      }
+    },
+    "/gamification/challenges/{id}/complete": {
+      "post": {
+        "summary": "Submit challenge completion proof",
+        "description": "Calculates challenge XP using difficulty and early bonuses, and adds to employee balance.",
+        "tags": ["Gamification Challenges"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "proofUrl": { "type": "string", "example": "http://ecosphere.com/cert.pdf" },
+                  "isEarlySubmission": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Challenge completed successfully" }
+        }
+      }
+    },
+    "/gamification/badges": {
+      "post": {
+        "summary": "Create a Badge",
+        "tags": ["Gamification Badges"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "description", "xpThreshold"],
+                "properties": {
+                  "name": { "type": "string", "example": "Carbon Crusader" },
+                  "description": { "type": "string", "example": "Unlocked at 500 XP" },
+                  "xpThreshold": { "type": "integer", "example": 500 },
+                  "iconUrl": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Badge created" }
+        }
+      },
+      "get": {
+        "summary": "List all Badges",
+        "tags": ["Gamification Badges"],
+        "responses": {
+          "200": { "description": "Badges retrieved" }
+        }
+      }
+    },
+    "/gamification/rewards": {
+      "post": {
+        "summary": "Create a Reward",
+        "tags": ["Gamification Rewards"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "xpCost", "stock"],
+                "properties": {
+                  "title": { "type": "string", "example": "1 Day Paid Time Off" },
+                  "description": { "type": "string", "example": "Redeemable for 1000 XP." },
+                  "xpCost": { "type": "integer", "example": 1000 },
+                  "stock": { "type": "integer", "example": 5 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Reward created" }
+        }
+      },
+      "get": {
+        "summary": "List all Rewards",
+        "tags": ["Gamification Rewards"],
+        "responses": {
+          "200": { "description": "Rewards retrieved" }
+        }
+      }
+    },
+    "/gamification/rewards/redeem": {
+      "post": {
+        "summary": "Submit a reward redemption request",
+        "description": "Verifies stock and XP balance, locks XP/stock, and sets status to PENDING.",
+        "tags": ["Gamification Rewards"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rewardId"],
+                "properties": {
+                  "rewardId": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Redemption request submitted successfully" }
+        }
+      }
+    },
+    "/gamification/rewards/redemptions/{id}/approve": {
+      "put": {
+        "summary": "Approve, Reject, or Deliver a reward redemption request",
+        "description": "Requires ADMIN or ESG_MANAGER role. Rejecting refunds XP and restores stock atomically.",
+        "tags": ["Gamification Rewards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["APPROVED", "REJECTED", "DELIVERED"], "example": "APPROVED" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Redemption status updated" }
+        }
+      }
     }
   },
   "components": {

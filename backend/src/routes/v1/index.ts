@@ -7,6 +7,8 @@ import roleRoutes from "./role.routes";
 import healthRoutes from "./health.routes";
 import environmentalRoutes from "./environmental.routes";
 import governanceRoutes from "./governance.routes";
+import socialRoutes from "./social.routes";
+import gamificationRoutes from "./gamification.routes";
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use("/roles", roleRoutes);
 router.use("/health", healthRoutes);
 router.use("/environmental", environmentalRoutes);
 router.use("/governance", governanceRoutes);
+router.use("/social", socialRoutes);
+router.use("/gamification", gamificationRoutes);
 
 export default router;

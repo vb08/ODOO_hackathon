@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const DepartmentController_1 = require("../../controllers/DepartmentController");
+const auth_1 = require("../../middlewares/auth");
+const rbac_1 = require("../../middlewares/rbac");
+const validate_1 = require("../../middlewares/validate");
+const department_validation_1 = require("../../validations/department.validation");
+const asyncHandler_1 = require("../../middlewares/asyncHandler");
+const roles_1 = require("../../constants/roles");
+const router = (0, express_1.Router)();
+const controller = new DepartmentController_1.DepartmentController();
+// All department APIs require authentication
+router.use(auth_1.authenticate);
+router.post("/", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN, roles_1.RoleCode.ESG_MANAGER]), (0, validate_1.validate)(department_validation_1.createDepartmentSchema), (0, asyncHandler_1.asyncHandler)(controller.create));
+router.get("/", (0, asyncHandler_1.asyncHandler)(controller.findAll));
+router.get("/:id", (0, validate_1.validate)(department_validation_1.getDepartmentByIdSchema), (0, asyncHandler_1.asyncHandler)(controller.findById));
+router.put("/:id", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN, roles_1.RoleCode.ESG_MANAGER]), (0, validate_1.validate)(department_validation_1.updateDepartmentSchema), (0, asyncHandler_1.asyncHandler)(controller.update));
+router.delete("/:id", (0, rbac_1.authorize)([roles_1.RoleCode.ADMIN]), (0, validate_1.validate)(department_validation_1.getDepartmentByIdSchema), (0, asyncHandler_1.asyncHandler)(controller.delete));
+exports.default = router;

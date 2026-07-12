@@ -1,0 +1,1 @@
+Governance Module: Reserved for Compliance Auditing, Risk Management, Whistleblowing logs, and Board Policy acknowledgement records.

@@ -151,6 +151,98 @@ async function main() {
     logger.info(`ESG Policy upserted: ${policy.code}`);
   }
 
+  // 6. Seed Gamification Badges
+  const badgesData = [
+    { name: "Eco Warrior", description: "Earned for crossing 100 XP threshold", xpThreshold: 100, iconUrl: "http://ecosphere.com/badges/eco_warrior.png" },
+    { name: "Sustain Master", description: "Earned for crossing 500 XP threshold", xpThreshold: 500, iconUrl: "http://ecosphere.com/badges/sustain_master.png" },
+    { name: "ESG Champion", description: "Earned for crossing 1000 XP threshold", xpThreshold: 1000, iconUrl: "http://ecosphere.com/badges/esg_champion.png" }
+  ];
+
+  for (const badge of badgesData) {
+    await prisma.badge.upsert({
+      where: { name: badge.name },
+      update: { description: badge.description, xpThreshold: badge.xpThreshold, iconUrl: badge.iconUrl },
+      create: {
+        name: badge.name,
+        description: badge.description,
+        xpThreshold: badge.xpThreshold,
+        iconUrl: badge.iconUrl,
+        createdByUserId: adminId
+      }
+    });
+    logger.info(`Badge upserted: ${badge.name}`);
+  }
+
+  // 7. Seed Gamification Rewards
+  const rewardsData = [
+    { title: "1 Day Paid Time Off", description: "Redeemable for 1000 XP", xpCost: 1000, stock: 10 },
+    { title: "Free Organic Coffee", description: "Redeemable for 50 XP", xpCost: 50, stock: 100 },
+    { title: "Exclusive ESG Corporate Hoodie", description: "Redeemable for 300 XP", xpCost: 300, stock: 15 }
+  ];
+
+  for (const reward of rewardsData) {
+    const existingReward = await prisma.reward.findFirst({ where: { title: reward.title } });
+    if (!existingReward) {
+      await prisma.reward.create({
+        data: {
+          title: reward.title,
+          description: reward.description,
+          xpCost: reward.xpCost,
+          stock: reward.stock,
+          createdByUserId: adminId
+        }
+      });
+      logger.info(`Reward seeded: ${reward.title}`);
+    }
+  }
+
+  // 8. Seed Challenges
+  const challengesData = [
+    {
+      title: "Zero Single-Use Plastic Challenge",
+      description: "Avoid using any single-use plastic cups, bottles, or packaging at the workplace for one week.",
+      baseXp: 100,
+      difficultyMultiplier: 1.2,
+      completionBonus: 50,
+      earlySubmissionBonus: 25,
+      status: "ACTIVE",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    },
+    {
+      title: "Green Transportation Quest",
+      description: "Commute to work using public transport, carpooling, bicycling, or walking for 5 consecutive days.",
+      baseXp: 200,
+      difficultyMultiplier: 1.5,
+      completionBonus: 100,
+      earlySubmissionBonus: 50,
+      status: "ACTIVE",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+    }
+  ];
+
+  for (const challenge of challengesData) {
+    const existingChallenge = await prisma.challenge.findFirst({ where: { title: challenge.title } });
+    if (!existingChallenge) {
+      await prisma.challenge.create({
+        data: {
+          title: challenge.title,
+          description: challenge.description,
+          baseXp: challenge.baseXp,
+          difficultyMultiplier: challenge.difficultyMultiplier,
+          completionBonus: challenge.completionBonus,
+          earlySubmissionBonus: challenge.earlySubmissionBonus,
+          status: challenge.status,
+          startDate: challenge.startDate,
+          endDate: challenge.endDate,
+          createdByUserId: adminId
+        }
+      });
+      logger.info(`Challenge seeded: ${challenge.title}`);
+    }
+  }
+
   logger.info("🎉 Database seeding completed successfully.");
 }
 
